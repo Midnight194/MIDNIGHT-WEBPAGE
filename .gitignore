@@ -1,0 +1,11 @@
+# Ignore environment config
+.env
+
+# Ignore Python cache
+__pycache__/
+*.pyc
+
+# Ignore local data files (optional, if you're saving sensitive data)
+submitted_data.txt
+linked_accounts.txt
+
