@@ -1,115 +1,177 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Dashboard - Midnight Web</title>
+    <title>Midnight Dashboard</title>
     <style>
         body {
-            background-color: #0e0e0e;
-            color: #e0e0e0;
+            background-color: #121212;
+            color: #cccccc;
             font-family: 'Courier New', monospace;
+            padding: 30px;
             text-align: center;
-            padding: 40px;
         }
 
-        h1 {
-            color: #c13535;
-            font-size: 2.2em;
-            margin-bottom: 30px;
+        h1, h2 {
+            color: #ffffff;
         }
 
         .section {
-            background-color: #1a1a1a;
-            border: 1px solid #333;
-            margin: 20px auto;
+            background-color: #1e1e1e;
+            margin: 30px auto;
             padding: 25px;
-            border-radius: 8px;
-            max-width: 600px;
+            border-radius: 12px;
+            max-width: 700px;
+            box-shadow: 0 0 10px #000000aa;
         }
 
-        h2 {
-            color: #cccccc;
-            font-size: 1.5em;
+        .section h2 {
+            font-size: 1.8em;
             margin-bottom: 10px;
         }
 
-        p {
-            color: #b0b0b0;
-            font-size: 1em;
-        }
-
-        ul {
-            list-style: none;
-            padding: 0;
-            margin-top: 10px;
-            color: #b5b5b5;
-        }
-
-        .btn {
-            background-color: #2e2e2e;
-            border: 1px solid #444;
+        .flash-message {
+            background-color: #003333;
+            color: #00ffcc;
             padding: 10px 20px;
-            color: #e0e0e0;
-            border-radius: 4px;
-            cursor: pointer;
+            margin: 20px auto;
+            border-radius: 6px;
+            max-width: 500px;
+        }
+
+        .account-options {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
             margin-top: 15px;
         }
 
-        .btn:hover {
-            background-color: #3a3a3a;
+        .account {
+            background-color: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 15px;
+            width: 140px;
+            cursor: pointer;
+            font-weight: bold;
         }
 
-        a {
-            color: #999999;
-            text-decoration: none;
+        .account:hover {
+            background-color: #333;
         }
 
-        a:hover {
-            text-decoration: underline;
-            color: #bbbbbb;
+        .form-container {
+            display: none;
+            margin-top: 20px;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+            background: #1e1e1e;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: left;
         }
 
-        .footer {
-            margin-top: 60px;
-            font-size: 0.85em;
-            color: #555;
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 4px;
+            border: none;
+        }
+
+        input[type="submit"] {
+            background-color: #444;
+            color: white;
+            cursor: pointer;
+        }
+
+        .logout {
+            margin-top: 40px;
+        }
+
+        .logout button {
+            padding: 10px 20px;
+            background-color: #1e88e5;
+            border: none;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .logout button:hover {
+            background-color: #1565c0;
+        }
+
+        em {
+            color: #00ffaa;
         }
     </style>
 </head>
 <body>
-    <h1>Midnight Shadow Dashboard</h1>
-    <p>Logged in as: <strong>{{ current_user.email }}</strong></p>
+
+    <h1>🕶 Welcome, {{ current_user.email }}</h1>
+
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <div class="flash-message">
+            {% for message in messages %}
+                <p>{{ message }}</p>
+            {% endfor %}
+        </div>
+    {% endif %}
+    {% endwith %}
 
     <div class="section">
-        <h2>Linked Accounts</h2>
-        <p>Manage your connected Facebook, TikTok, etc.and surf in the shadows </p>
-        <a href="/success">→ Link More Accounts</a>
+        <h2>🔗 Link Your Accounts</h2>
+        <p>Select an account to link:</p>
+        <div class="account-options">
+            <div class="account" onclick="showForm('facebookForm')">Facebook</div>
+            <div class="account" onclick="showForm('tiktokForm')">TikTok</div>
+            <div class="account" onclick="showForm('instagramForm')">Instagram</div>
+            <div class="account" onclick="showForm('yahooForm')">Yahoo</div>
+            <div class="account" onclick="showForm('gamingForm')">Gaming</div>
+            <div class="account" onclick="showForm('bankForm')">Bank</div>
+        </div>
+
+        {% for platform in ['facebook', 'tiktok', 'instagram', 'yahoo', 'gaming', 'bank'] %}
+        <div class="form-container" id="{{ platform }}Form">
+            <h3>Link {{ platform.capitalize() }} Account</h3>
+            <form action="/link_{{ platform }}" method="POST">
+                <label>Username or Email:</label><br>
+                <input type="text" name="{{ platform }}_user" required><br>
+                <label>Password:</label><br>
+                <input type="password" name="{{ platform }}_password" required><br>
+                <input type="submit" value="Link Account">
+            </form>
+        </div>
+        {% endfor %}
     </div>
 
     <div class="section">
-        <h2>Privacy & IP Cloaking</h2>
-        <p>Proxy Shield: <strong>Enabled</strong></p>
+        <h2>🛡 Privacy Settings</h2>
+        <p>Proxy: <strong>Enabled</strong></p>
         <p>IP Masking: <strong>Active</strong></p>
-        <p>Assigned IPs:</p>
-        <ul>
-            <li>185.23.91.10 (Germany)</li>
-            <li>103.75.118.213 (Singapore)</li>
-            <li>45.142.182.18 (Russia)</li>
-        </ul>
+        <p>Multiple IPs: <strong>Available</strong></p>
     </div>
 
     <div class="section">
-        <h2>Identity Generator</h2>
-        <p>Current Identity: <em>Shadow Operative #3821</em></p>
+        <h2>🧑 Identity Generator</h2>
+        <p>You are operating as: <em>{{ identity if identity else 'Shadow Operative #XXXX' }}</em></p>
     </div>
 
-    <form action="/logout" method="POST">
-        <button class="btn" type="submit">Logout</button>
+    <form class="logout" action="/logout" method="POST">
+        <button type="submit">🚪 Logout</button>
     </form>
 
-    <div class="footer">
-        Midnight Web — Operating Undetected
-    </div>
+    <script>
+        function showForm(id) {
+            document.getElementById(id).style.display = "block";
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        }
+    </script>
 </body>
 </html>
+
+
 

